@@ -1,5 +1,7 @@
 import OpenAI from "openai";
 import type { ToneInfo } from "@/types/tone.js";
+import { OpenAIError } from "@/errors/OpenAIError.js";
+import buildTransformInstructions from "./create-instructions.js";
 
 const client = new OpenAI({
 	apiKey: process.env.OPENAI_API_KEY,
@@ -16,33 +18,33 @@ const callOpenAITransformAPI = async ({
 	isTranslated: boolean;
 	targetLanguage: string;
 }) => {
-	const { tonePrompt, toneStrength, emojiAllowed } = toneInfo;
+	const instructions = buildTransformInstructions(toneInfo, targetLanguage);
 
-	const instructions = [
-		"You are a bilingual text transformation assistant.",
-		"Your job is to rewrite the given text according to the user's tone instructions and translation preference.",
-		`Tone details: ${tonePrompt} (strength: ${toneStrength}%).`,
-		emojiAllowed
-			? "Emojis are allowed and can be used appropriately."
-			: "Do NOT include any emojis.",
-		targetLanguage === "SAME"
-			? "Do NOT translate. Keep the original language; only rewrite to match the tone."
-			: `Translate the input into ${targetLanguage} and rewrite it naturally to match the tone.`,
-		targetLanguage === "SAME"
-			? "Output MUST be in the same language as the input."
-			: `Output MUST be in ${targetLanguage}.`,
-		"Respond with ONLY the transformed text. Do not include explanations, quotes, or markdown.",
-	].join(" ");
+	try {
+		const response = await client.responses.create({
+			model: "gpt-4o-mini",
+			instructions,
+			input: originalText,
+		});
 
-	const response = await client.responses.create({
-		model: "gpt-4o-mini",
-		instructions,
-		input: originalText,
-	});
+		const transformedText = response.output_text.trim() ?? "";
 
-	const transformedText = response.output_text.trim() ?? "";
+		return { transformedText };
+	} catch (error) {
+		if (error instanceof OpenAI.APIError) {
+			throw new OpenAIError(
+				`OpenAI API error: ${error.status} - ${error.message}`
+			);
+		}
 
-	return { transformedText };
+		const message =
+			(error as any)?.message?.includes("Missing credentials") ||
+			(error as any)?.message?.includes("apiKey")
+				? "Missing or invalid OpenAI API key"
+				: "Unexpected error while communicating with OpenAI API";
+
+		throw new OpenAIError(message);
+	}
 };
 
 export default callOpenAITransformAPI;
