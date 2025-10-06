@@ -1,8 +1,9 @@
-import callOpenAITransformAPI from "../infra/ai/open-ai.js";
+import callOpenAITransformAPI from "@/infra/ai/open-ai.js";
 import type {
+	LanguageCode,
 	TransformationProps,
 	TransformationResult,
-} from "../types/transformation.js";
+} from "@/types/transformation.js";
 
 const executeTransform = async ({
 	toneInfo,
@@ -10,7 +11,6 @@ const executeTransform = async ({
 	originalText,
 }: TransformationProps): Promise<TransformationResult> => {
 	const isKoreanInput = /[ㄱ-ㅎ가-힣]/.test(originalText);
-
 	const targetLanguage: "English" | "Korean" | "SAME" = isTranslated
 		? isKoreanInput
 			? "English"
@@ -24,15 +24,15 @@ const executeTransform = async ({
 		targetLanguage,
 	});
 
-	return isTranslated
-		? {
-				transformedText,
-				languageIn: isKoreanInput ? "Korean" : "English",
-				languageOut: targetLanguage,
-		  }
-		: {
-				transformedText,
-		  };
+	if (!isTranslated || targetLanguage === "SAME") {
+		return { transformedText };
+	}
+
+	const languageIn: LanguageCode = isKoreanInput ? "Kor" : "Eng";
+	const languageOut: LanguageCode =
+		targetLanguage === "English" ? "Eng" : "Kor";
+
+	return { transformedText, languageIn, languageOut };
 };
 
 export { executeTransform };

@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { executeTransform } from "../services/transformation.js";
+import { executeTransform } from "@/services/transformation.js";
 
 const handleTransform = async (req: Request, res: Response) => {
 	const toneInfo = req.body.toneInfo;
@@ -18,7 +18,7 @@ const handleTransform = async (req: Request, res: Response) => {
 		originalText,
 	});
 
-	res.status(200).json({ transformedText: result });
+	res.status(200).json(result);
 };
 
 export { handleTransform };
