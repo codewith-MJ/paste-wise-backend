@@ -51,12 +51,12 @@ app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
 	const status = typeof err.status === "number" ? err.status : 500;
 	const message = err?.message ?? "Internal Server Error";
 
-	return res.status(status).json({
-		error: {
-			message,
-			status,
-		},
-	});
+	const body: Record<string, unknown> = { message, status };
+
+	if (err?.details) body.details = err.details;
+	if (err?.code) body.code = err.code;
+
+	return res.status(status).json({ error: body });
 });
 
 export default app;
