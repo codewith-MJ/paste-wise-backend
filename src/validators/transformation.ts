@@ -1,20 +1,28 @@
 import { ValidationError } from "@/errors/ValidationError.js";
 import type { Request, Response, NextFunction } from "express";
 import { z } from "zod";
+import { ERROR_MESSAGES } from "@/constants/error.js";
+
+const {
+	TONE_PROMPT_REQUIRED,
+	TONE_STRENGTH_MAX,
+	TONE_STRENGTH_MIN,
+	ORIGINAL_TEXT_REQUIRED,
+} = ERROR_MESSAGES.VALIDATION;
 
 const booleanLike = z.union([z.boolean(), z.number()]).transform((v) => !!v);
 
 const transformationSchema = z.strictObject({
 	toneInfo: z.strictObject({
-		tonePrompt: z.string().min(1, "tonePrompt is required"),
+		tonePrompt: z.string().min(1, TONE_PROMPT_REQUIRED),
 		toneStrength: z
 			.number()
-			.min(0, "toneStrength must be at least 0")
-			.max(100, "toneStrength must not exceed 100"),
+			.min(0, TONE_STRENGTH_MIN)
+			.max(100, TONE_STRENGTH_MAX),
 		emojiAllowed: booleanLike,
 	}),
 	isTranslated: booleanLike,
-	originalText: z.string().min(1, "originalText is required"),
+	originalText: z.string().min(1, ORIGINAL_TEXT_REQUIRED),
 });
 
 const validateTransformationRequest = (
