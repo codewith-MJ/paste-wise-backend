@@ -1,13 +1,11 @@
 import type { ToneInfo } from "./tone.js";
 
-type LanguageCode = "Kor" | "Eng";
-
 type TransformationResult =
 	| { transformedText: string }
 	| {
 			transformedText: string;
-			languageIn: LanguageCode;
-			languageOut: LanguageCode;
+			languageIn: string;
+			languageOut: string;
 	  };
 
 type TransformationProps = {
@@ -16,4 +14,4 @@ type TransformationProps = {
 	originalText: string;
 };
 
-export type { TransformationProps, TransformationResult, LanguageCode };
+export type { TransformationProps, TransformationResult };
