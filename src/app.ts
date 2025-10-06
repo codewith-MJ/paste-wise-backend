@@ -6,7 +6,7 @@ import { pinoHttp } from "pino-http";
 import path from "path";
 import { fileURLToPath } from "url";
 
-import indexRouter from "./routes/index.js";
+import transformationRoutes from "./routes/transformations.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -20,7 +20,7 @@ const logger = pino(
 				transport: {
 					target: "pino-pretty",
 					options: {
-						colorize: true, // 보기 좋게
+						colorize: true,
 						translateTime: "SYS:HH:MM:ss.l",
 						ignore: "pid,hostname",
 					},
@@ -36,7 +36,7 @@ app.use(cookieParser());
 
 app.use(express.static(path.join(__dirname, "public")));
 
-app.use("/", indexRouter);
+app.use("/transformations", transformationRoutes);
 
 app.use((req: Request, res: Response, _next: NextFunction) => {
 	req.log.warn({ url: req.url }, "Not Found");
