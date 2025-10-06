@@ -1,5 +1,5 @@
 import express from "express";
-import { handleTransform } from "../controllers/transformation-controller.js";
+import { handleTransform } from "@/controllers/transformation-controller.js";
 
 const router = express.Router();
 

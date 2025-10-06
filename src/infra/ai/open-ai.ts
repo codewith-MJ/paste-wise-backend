@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import type { ToneInfo } from "../../types/tone.js";
+import type { ToneInfo } from "@/types/tone.js";
 
 const client = new OpenAI({
 	apiKey: process.env.OPENAI_API_KEY,
