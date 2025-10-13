@@ -5,11 +5,14 @@ import pino from "pino";
 import { pinoHttp } from "pino-http";
 import path from "path";
 import { fileURLToPath } from "url";
+import { ERROR_MESSAGES } from "./constants/error.js";
 
-import indexRouter from "./routes/index.js";
+import transformationRoutes from "./routes/transformations.js";
+import { NotFoundError } from "./errors/NotFoundError.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const INTERNAL_SERVER_ERROR = ERROR_MESSAGES.VALIDATION;
 
 const app = express();
 
@@ -20,7 +23,7 @@ const logger = pino(
 				transport: {
 					target: "pino-pretty",
 					options: {
-						colorize: true, // 보기 좋게
+						colorize: true,
 						translateTime: "SYS:HH:MM:ss.l",
 						ignore: "pid,hostname",
 					},
@@ -36,27 +39,25 @@ app.use(cookieParser());
 
 app.use(express.static(path.join(__dirname, "public")));
 
-app.use("/", indexRouter);
+app.use("/transformations", transformationRoutes);
 
-app.use((req: Request, res: Response, _next: NextFunction) => {
+app.use((req: Request, _res: Response, next: NextFunction) => {
 	req.log.warn({ url: req.url }, "Not Found");
-	return res.status(404).json({
-		error: { message: "Not Found", status: 404 },
-	});
+	next(new NotFoundError(`Cannot ${req.method} ${req.originalUrl}`));
 });
 
 app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
 	req.log.error({ err }, "Unhandled error");
 
 	const status = typeof err.status === "number" ? err.status : 500;
-	const message = err?.message ?? "Internal Server Error";
+	const message = err?.message ?? INTERNAL_SERVER_ERROR;
 
-	return res.status(status).json({
-		error: {
-			message,
-			status,
-		},
-	});
+	const body: Record<string, unknown> = { message, status };
+
+	if (err?.details) body.details = err.details;
+	if (err?.code) body.code = err.code;
+
+	return res.status(status).json({ error: body });
 });
 
 export default app;
