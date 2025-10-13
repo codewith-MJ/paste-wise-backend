@@ -31,7 +31,8 @@ const validateTransformationRequest = (
 	next: NextFunction
 ) => {
 	try {
-		transformationSchema.parse(req.body);
+		const data = transformationSchema.parse(req.body);
+		req.body = data;
 		next();
 	} catch (error) {
 		if (error instanceof z.ZodError) {

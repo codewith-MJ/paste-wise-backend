@@ -7,14 +7,13 @@ const handleTransform = async (req: Request, res: Response) => {
 	const originalText = req.body.originalText;
 
 	const emojiAllowed = Boolean(toneInfo.emojiAllowed);
-	const translatedFlag = Boolean(isTranslated);
 
 	const result = await executeTransform({
 		toneInfo: {
 			...toneInfo,
 			emojiAllowed,
 		},
-		isTranslated: translatedFlag,
+		isTranslated,
 		originalText,
 	});
 
