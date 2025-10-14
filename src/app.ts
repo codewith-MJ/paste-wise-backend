@@ -8,6 +8,7 @@ import { fileURLToPath } from "url";
 import { ERROR_MESSAGES } from "./constants/error.js";
 
 import transformationRoutes from "./routes/transformations.js";
+import authRoutes from "./routes/auth.js";
 import { NotFoundError } from "./errors/NotFoundError.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -40,6 +41,7 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
 app.use("/transformations", transformationRoutes);
+app.use("/auth", authRoutes);
 
 app.use((req: Request, _res: Response, next: NextFunction) => {
 	req.log.warn({ url: req.url }, "Not Found");
