@@ -1,8 +1,8 @@
-import { startGoogleAuth } from "@/controllers/auth.js";
+import { googleNativeCallback } from "@/controllers/auth.js";
 import { Router } from "express";
 
 const router = Router();
 
-router.get("/google", startGoogleAuth);
+router.post("/google/native-callback", googleNativeCallback);
 
 export default router;
