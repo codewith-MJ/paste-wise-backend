@@ -5,8 +5,9 @@ import pino from "pino";
 import { pinoHttp } from "pino-http";
 import path from "path";
 import { fileURLToPath } from "url";
-import { ERROR_MESSAGES } from "./constants/error.js";
+import cors from "cors";
 
+import { ERROR_MESSAGES } from "./constants/error.js";
 import transformationRoutes from "./routes/transformations.js";
 import authRoutes from "./routes/auth.js";
 import { NotFoundError } from "./errors/NotFoundError.js";
@@ -33,6 +34,14 @@ const logger = pino(
 );
 
 app.use(pinoHttp({ logger }));
+
+app.use(
+	cors({
+		origin: "*",
+		methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+		allowedHeaders: ["Content-Type", "Authorization"],
+	})
+);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
