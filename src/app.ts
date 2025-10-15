@@ -77,4 +77,5 @@ app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
 	return res.status(status).json({ error: body });
 });
 
+export { logger };
 export default app;
