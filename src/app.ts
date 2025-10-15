@@ -11,6 +11,7 @@ import { ERROR_MESSAGES } from "./constants/error.js";
 import transformationRoutes from "./routes/transformations.js";
 import authRoutes from "./routes/auth.js";
 import { NotFoundError } from "./errors/NotFoundError.js";
+import verifyAppSecret from "./middlewares/verify-app-secret.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -37,11 +38,16 @@ app.use(pinoHttp({ logger }));
 
 app.use(
 	cors({
-		origin: "*",
-		methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-		allowedHeaders: ["Content-Type", "Authorization"],
+		origin: (origin, callback) => {
+			if (!origin) return callback(null, true);
+			callback(new Error("CORS not allowed for this origin"));
+		},
+		methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+		allowedHeaders: ["Content-Type", "Authorization", "X-App-Secret"],
 	})
 );
+
+app.use(verifyAppSecret);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
