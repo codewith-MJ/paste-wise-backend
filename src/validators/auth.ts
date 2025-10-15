@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { z } from "zod";
-import { ValidationError } from "@/errors/ValidationError.js";
+import { ValidationError } from "@/errors/index.js";
 import { ERROR_MESSAGES } from "@/constants/error.js";
 
 const { VALIDATION } = ERROR_MESSAGES;

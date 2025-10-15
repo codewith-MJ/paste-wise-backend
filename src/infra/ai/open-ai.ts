@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import type { ToneInfo } from "@/types/tone.js";
-import { OpenAIError } from "@/errors/OpenAIError.js";
+import { OpenAIError } from "@/errors/index.js";
 import buildTransformInstructions from "./create-instructions.js";
 
 const client = new OpenAI({
