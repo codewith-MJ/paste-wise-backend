@@ -1,4 +1,8 @@
-import { googleNativeCallback } from "@/controllers/auth.js";
+import {
+	googleNativeCallback,
+	logout,
+	refreshAccessToken,
+} from "@/controllers/auth.js";
 import { validateGoogleNativeCallbackRequest } from "@/validators/auth.js";
 import { Router } from "express";
 
@@ -9,5 +13,7 @@ router.post(
 	validateGoogleNativeCallbackRequest,
 	googleNativeCallback
 );
+router.post("/refresh", refreshAccessToken);
+router.post("/logout", logout);
 
 export default router;

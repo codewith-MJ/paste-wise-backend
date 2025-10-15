@@ -1,6 +1,14 @@
 import type { Request, Response } from "express";
-import { exchangeCodeForTokens, verifyIdToken } from "@/services/auth.js";
+import { exchangeCodeForTokens, verifyIdToken } from "@/services/auth/auth.js";
 import { ERROR_MESSAGES } from "@/constants/error.js";
+import { issueAccessToken } from "@/services/auth/token.js";
+import {
+	createRefreshToken,
+	isRefreshTokenValid,
+	revokeRefreshToken,
+	saveRefreshToken,
+} from "@/services/auth/refresh-store.js";
+import { UnauthorizedError, BadRequestError } from "@/errors/index.js";
 
 const { AUTH } = ERROR_MESSAGES;
 
@@ -15,7 +23,7 @@ const googleNativeCallback = async (req: Request, res: Response) => {
 
 	try {
 		const tokens = await exchangeCodeForTokens({
-			code,
+			authorizationCode: code,
 			codeVerifier,
 			redirectUri,
 			clientId,
@@ -28,7 +36,15 @@ const googleNativeCallback = async (req: Request, res: Response) => {
 
 		const user = await verifyIdToken(tokens.id_token, clientId);
 
-		return res.json({ user });
+		const accessToken = issueAccessToken({
+			sub: user.id,
+			email: user.email,
+			name: user.name,
+		});
+		const refreshToken = createRefreshToken();
+		await saveRefreshToken(user.id, refreshToken);
+
+		return res.json({ user, accessToken, refreshToken });
 	} catch (err: any) {
 		req.log?.error?.({ err }, "[auth] native-callback failed");
 		return res.status(500).json({
@@ -38,4 +54,30 @@ const googleNativeCallback = async (req: Request, res: Response) => {
 	}
 };
 
-export { googleNativeCallback };
+const refreshAccessToken = async (req: Request, res: Response) => {
+	const { userId, refreshToken } = req.body || {};
+	if (!userId || !refreshToken) {
+		throw new BadRequestError("userId and refreshToken required");
+	}
+
+	const ok = await isRefreshTokenValid(userId, refreshToken);
+	if (!ok) {
+		throw new UnauthorizedError("invalid refresh token");
+	}
+
+	const accessToken = issueAccessToken({ sub: String(userId), email: "" });
+
+	return res.json({ accessToken });
+};
+
+const logout = async (req: Request, res: Response) => {
+	const { userId, refreshToken } = req.body || {};
+	if (!userId || !refreshToken) {
+		throw new BadRequestError("userId and refreshToken required");
+	}
+	await revokeRefreshToken(userId, refreshToken);
+
+	return res.json({ ok: true });
+};
+
+export { googleNativeCallback, refreshAccessToken, logout };

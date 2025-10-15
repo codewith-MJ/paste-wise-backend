@@ -25,7 +25,7 @@
 		"noUncheckedIndexedAccess": true,
 		"exactOptionalPropertyTypes": true,
 
-		"verbatimModuleSyntax": true,
+		"verbatimModuleSyntax": false,
 		"isolatedModules": true,
 		"noUncheckedSideEffectImports": true,
 		"moduleDetection": "force"
