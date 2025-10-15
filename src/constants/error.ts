@@ -10,6 +10,9 @@ const ERROR_MESSAGES = {
 		GOOGLE_CODE_REQUIRED: "Google authorization code is required",
 		GOOGLE_CODE_VERIFIER_REQUIRED: "Google codeVerifier is required",
 		GOOGLE_REDIRECT_URI_REQUIRED: "Google redirectUri is required",
+
+		USER_ID_REQUIRED: "userId is required",
+		REFRESH_TOKEN_REQUIRED: "refreshToken is required",
 	},
 	AUTH: {
 		MISSING_CLIENT_ID: "Server misconfigured: GOOGLE_CLIENT_ID missing",

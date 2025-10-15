@@ -56,9 +56,6 @@ const googleNativeCallback = async (req: Request, res: Response) => {
 
 const refreshAccessToken = async (req: Request, res: Response) => {
 	const { userId, refreshToken } = req.body || {};
-	if (!userId || !refreshToken) {
-		throw new BadRequestError("userId and refreshToken required");
-	}
 
 	const ok = await isRefreshTokenValid(userId, refreshToken);
 	if (!ok) {
@@ -72,9 +69,6 @@ const refreshAccessToken = async (req: Request, res: Response) => {
 
 const logout = async (req: Request, res: Response) => {
 	const { userId, refreshToken } = req.body || {};
-	if (!userId || !refreshToken) {
-		throw new BadRequestError("userId and refreshToken required");
-	}
 	await revokeRefreshToken(userId, refreshToken);
 
 	return res.json({ ok: true });

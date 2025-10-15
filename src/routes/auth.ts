@@ -3,7 +3,10 @@ import {
 	logout,
 	refreshAccessToken,
 } from "@/controllers/auth.js";
-import { validateGoogleNativeCallbackRequest } from "@/validators/auth.js";
+import {
+	validateGoogleNativeCallbackRequest,
+	validateRefreshOrLogoutRequest,
+} from "@/validators/auth.js";
 import { Router } from "express";
 
 const router = Router();
@@ -13,7 +16,7 @@ router.post(
 	validateGoogleNativeCallbackRequest,
 	googleNativeCallback
 );
-router.post("/refresh", refreshAccessToken);
-router.post("/logout", logout);
+router.post("/refresh", validateRefreshOrLogoutRequest, refreshAccessToken);
+router.post("/logout", validateRefreshOrLogoutRequest, logout);
 
 export default router;

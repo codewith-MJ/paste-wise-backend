@@ -31,4 +31,26 @@ const validateGoogleNativeCallbackRequest = (
 	}
 };
 
-export { validateGoogleNativeCallbackRequest };
+const RefreshLogoutBody = z.strictObject({
+	userId: z.string().min(1, VALIDATION.USER_ID_REQUIRED),
+	refreshToken: z.string().min(1, VALIDATION.REFRESH_TOKEN_REQUIRED),
+});
+
+type RefreshLogoutBody = z.infer<typeof RefreshLogoutBody>;
+
+const validateRefreshOrLogoutRequest = (
+	req: Request,
+	_res: Response,
+	next: NextFunction
+) => {
+	try {
+		const parsed = RefreshLogoutBody.parse(req.body);
+		req.body = parsed;
+		next();
+	} catch (error) {
+		if (error instanceof z.ZodError) return next(new ValidationError(error));
+		return next(error);
+	}
+};
+
+export { validateGoogleNativeCallbackRequest, validateRefreshOrLogoutRequest };
