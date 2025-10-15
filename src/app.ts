@@ -7,11 +7,12 @@ import path from "path";
 import { fileURLToPath } from "url";
 import cors from "cors";
 
-import { ERROR_MESSAGES } from "./constants/error.js";
+import passport from "@/infra/auth/passport.js";
 import transformationRoutes from "./routes/transformations.js";
-import authRoutes from "./routes/auth.js";
-import { NotFoundError } from "./errors/NotFoundError.js";
+import authRoutes from "@/routes/auth.js";
+import { NotFoundError } from "@/errors/index.js";
 import verifyAppSecret from "./middlewares/verify-app-secret.js";
+import { ERROR_MESSAGES } from "./constants/error.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -34,7 +35,15 @@ const logger = pino(
 		  }
 );
 
-app.use(pinoHttp({ logger }));
+app.use(
+	pinoHttp({
+		logger,
+		redact: {
+			paths: ["req.headers.authorization", "req.headers.x-app-secret"],
+			remove: true,
+		},
+	})
+);
 
 app.use(
 	cors({
@@ -54,6 +63,8 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
 app.use(express.static(path.join(__dirname, "public")));
+
+app.use(passport.initialize());
 
 app.use("/transformations", transformationRoutes);
 app.use("/auth", authRoutes);
