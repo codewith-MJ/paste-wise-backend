@@ -1,7 +1,7 @@
-import { AppError } from "./AppError.js";
+import AppError from "./AppError.js";
 import type { ZodError } from "zod";
 
-export class ValidationError extends AppError {
+export default class ValidationError extends AppError {
 	constructor(error: ZodError) {
 		const details = error.issues
 			.map((issue) => {

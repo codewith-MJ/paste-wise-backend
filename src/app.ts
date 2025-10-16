@@ -5,10 +5,14 @@ import pino from "pino";
 import { pinoHttp } from "pino-http";
 import path from "path";
 import { fileURLToPath } from "url";
-import { ERROR_MESSAGES } from "./constants/error.js";
+import cors from "cors";
 
+import passport from "@/infra/auth/passport.js";
 import transformationRoutes from "./routes/transformations.js";
-import { NotFoundError } from "./errors/NotFoundError.js";
+import authRoutes from "@/routes/auth.js";
+import { NotFoundError } from "@/errors/index.js";
+import verifyAppSecret from "./middlewares/verify-app-secret.js";
+import { ERROR_MESSAGES } from "./constants/error.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -31,7 +35,28 @@ const logger = pino(
 		  }
 );
 
-app.use(pinoHttp({ logger }));
+app.use(
+	pinoHttp({
+		logger,
+		redact: {
+			paths: ["req.headers.authorization", "req.headers.x-app-secret"],
+			remove: true,
+		},
+	})
+);
+
+app.use(
+	cors({
+		origin: (origin, callback) => {
+			if (!origin) return callback(null, true);
+			callback(new Error("CORS not allowed for this origin"));
+		},
+		methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+		allowedHeaders: ["Content-Type", "Authorization", "X-App-Secret"],
+	})
+);
+
+app.use(verifyAppSecret);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -39,7 +64,10 @@ app.use(cookieParser());
 
 app.use(express.static(path.join(__dirname, "public")));
 
+app.use(passport.initialize());
+
 app.use("/transformations", transformationRoutes);
+app.use("/auth", authRoutes);
 
 app.use((req: Request, _res: Response, next: NextFunction) => {
 	req.log.warn({ url: req.url }, "Not Found");
@@ -60,4 +88,5 @@ app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
 	return res.status(status).json({ error: body });
 });
 
+export { logger };
 export default app;
