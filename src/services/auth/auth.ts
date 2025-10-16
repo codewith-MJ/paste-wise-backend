@@ -1,78 +1,64 @@
-import { OAuth2Client } from "google-auth-library";
+import { exchangeCodeForTokens, verifyIdToken } from "./google-oauth.js";
+import { upsertUser } from "@/infra/db/users.js";
+import { issueAccessToken } from "@/services/auth/token.js";
+import {
+	createRefreshToken,
+	saveRefreshToken,
+} from "@/services/auth/refresh-store.js";
+import { User } from "@/types/user.js";
 
-type TokenResponse = {
-	id_token?: string;
-	access_token?: string;
-	refresh_token?: string;
-	expires_in?: number;
-	scope?: string;
-	token_type?: string;
-};
-
-type GoogleUser = {
-	id: string;
-	name: string;
-	email: string;
-};
-
-const exchangeCodeForTokens = async ({
-	authorizationCode,
-	codeVerifier,
-	redirectUri,
-	clientId,
-	clientSecret,
-}: {
+type GoogleNativeLoginInput = {
 	authorizationCode: string;
 	codeVerifier: string;
 	redirectUri: string;
 	clientId: string;
-	clientSecret?: string;
-}): Promise<TokenResponse> => {
-	const params = new URLSearchParams({
-		grant_type: "authorization_code",
-		code: authorizationCode,
-		client_id: clientId,
-		code_verifier: codeVerifier,
-		redirect_uri: redirectUri,
-	});
-	if (clientSecret) params.set("client_secret", clientSecret);
-
-	const response = await fetch("https://oauth2.googleapis.com/token", {
-		method: "POST",
-		headers: { "Content-Type": "application/x-www-form-urlencoded" },
-		body: params.toString(),
-	});
-
-	const responseText = await response.text();
-	if (!response.ok) {
-		const error = new Error(`Token exchange failed: ${response.status}`);
-		(error as any).details = responseText;
-		throw error;
-	}
-
-	return JSON.parse(responseText) as TokenResponse;
+	clientSecret: string;
 };
 
-const verifyIdToken = async (
-	idToken: string,
-	clientId: string
-): Promise<GoogleUser> => {
-	const googleClient = new OAuth2Client(clientId);
-	const verificationTicket = await googleClient.verifyIdToken({
-		idToken,
-		audience: clientId,
+type GoogleNativeLoginResult = {
+	user: User;
+	accessToken: string;
+	refreshToken: string;
+};
+
+const loginWithGoogleNative = async (
+	input: GoogleNativeLoginInput
+): Promise<GoogleNativeLoginResult> => {
+	const tokens = await exchangeCodeForTokens({
+		authorizationCode: input.authorizationCode,
+		codeVerifier: input.codeVerifier,
+		redirectUri: input.redirectUri,
+		clientId: input.clientId,
+		clientSecret: input.clientSecret,
 	});
 
-	const payload = verificationTicket.getPayload();
-	if (!payload?.sub || !payload?.email) {
-		throw new Error("Invalid Google ID token payload");
+	if (!tokens.id_token) {
+		const err: any = new Error("No id_token in token response");
+		err.details = tokens;
+		throw err;
 	}
 
+	const googleUser = await verifyIdToken(tokens.id_token, input.clientId);
+
+	const dbUser = await upsertUser({
+		id: googleUser.id,
+		email: googleUser.email,
+		name: googleUser.name,
+	});
+
+	const accessToken = issueAccessToken({
+		sub: dbUser.id,
+		email: dbUser.email,
+		name: dbUser.name,
+	});
+	const refreshToken = createRefreshToken();
+	await saveRefreshToken(dbUser.id, refreshToken);
+
 	return {
-		id: payload.sub,
-		name: payload.name ?? payload.given_name ?? "",
-		email: payload.email,
+		user: { id: dbUser.id, email: dbUser.email, name: dbUser.name },
+		accessToken,
+		refreshToken,
 	};
 };
 
-export { exchangeCodeForTokens, verifyIdToken };
+export { loginWithGoogleNative };
