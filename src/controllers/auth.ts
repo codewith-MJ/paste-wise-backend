@@ -1,28 +1,26 @@
 import type { Request, Response } from "express";
-import { exchangeCodeForTokens, verifyIdToken } from "@/services/auth/auth.js";
 import { ERROR_MESSAGES } from "@/constants/error.js";
 import { issueAccessToken } from "@/services/auth/token.js";
 import {
-	createRefreshToken,
 	isRefreshTokenValid,
 	revokeRefreshToken,
-	saveRefreshToken,
 } from "@/services/auth/refresh-store.js";
-import { UnauthorizedError, BadRequestError } from "@/errors/index.js";
+import { UnauthorizedError } from "@/errors/index.js";
+import { loginWithGoogleNative } from "@/services/auth/auth.js";
 
 const { AUTH } = ERROR_MESSAGES;
 
 const googleNativeCallback = async (req: Request, res: Response) => {
 	const { code, codeVerifier, redirectUri } = req.body || {};
 
-	const clientId = process.env.GOOGLE_CLIENT_ID || "";
-	const clientSecret = process.env.GOOGLE_CLIENT_SECRET || "";
+	const clientId = process.env.GOOGLE_CLIENT_ID!;
+	const clientSecret = process.env.GOOGLE_CLIENT_SECRET!;
 	if (!clientId) {
 		return res.status(500).json({ message: AUTH.MISSING_CLIENT_ID });
 	}
 
 	try {
-		const tokens = await exchangeCodeForTokens({
+		const result = await loginWithGoogleNative({
 			authorizationCode: code,
 			codeVerifier,
 			redirectUri,
@@ -30,21 +28,7 @@ const googleNativeCallback = async (req: Request, res: Response) => {
 			clientSecret,
 		});
 
-		if (!tokens.id_token) {
-			return res.status(400).json({ message: AUTH.NO_ID_TOKEN, tokens });
-		}
-
-		const user = await verifyIdToken(tokens.id_token, clientId);
-
-		const accessToken = issueAccessToken({
-			sub: user.id,
-			email: user.email,
-			name: user.name,
-		});
-		const refreshToken = createRefreshToken();
-		await saveRefreshToken(user.id, refreshToken);
-
-		return res.json({ user, accessToken, refreshToken });
+		return res.json(result);
 	} catch (err: any) {
 		req.log?.error?.({ err }, "[auth] native-callback failed");
 		return res.status(500).json({
