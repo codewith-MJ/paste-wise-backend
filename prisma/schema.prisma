@@ -14,5 +14,43 @@ model User {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
+  toneOverrides UserToneOverride[]
+
   @@map("users")
+}
+
+model Tone {
+  toneId       Int       @id @default(autoincrement()) @map("tone_id")
+  toneName     String    @unique @map("tone_name")
+  tonePrompt   String    @map("tone_prompt")
+  toneStrength Int       @default(50) @map("tone_strength")
+  emojiAllowed Boolean   @default(true) @map("emoji_allowed")
+  isDefault    Boolean   @default(false) @map("is_default")
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  overrides    UserToneOverride[]
+
+  @@map("tones")
+}
+
+model UserToneOverride {
+  overrideId    Int       @id @default(autoincrement()) @map("override_id")
+  userId        String    @map("user_id")
+  presetKey     Int?      @map("preset_key") // Tone.toneId와 매칭 (없으면 유저 전용)
+  toneName      String?   @map("tone_name")
+  tonePrompt    String?   @map("tone_prompt")
+  toneStrength  Int?      @map("tone_strength")
+  emojiAllowed  Boolean?  @map("emoji_allowed")
+  deleted       Boolean   @default(false) @map("deleted")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tone Tone? @relation(fields: [presetKey], references: [toneId])
+
+  @@index([userId])
+  @@index([presetKey])
+  @@map("user_tone_overrides")
 }
