@@ -10,6 +10,7 @@ import cors from "cors";
 import passport from "@/infra/auth/passport.js";
 import transformationRoutes from "./routes/transformations.js";
 import authRoutes from "@/routes/auth.js";
+import toneRoutes from "@/routes/tone.js";
 import { NotFoundError } from "@/errors/index.js";
 import verifyAppSecret from "./middlewares/verify-app-secret.js";
 import { ERROR_MESSAGES } from "./constants/error.js";
@@ -68,6 +69,7 @@ app.use(passport.initialize());
 
 app.use("/transformations", transformationRoutes);
 app.use("/auth", authRoutes);
+app.use("/tones", toneRoutes);
 
 app.use((req: Request, _res: Response, next: NextFunction) => {
 	req.log.warn({ url: req.url }, "Not Found");
