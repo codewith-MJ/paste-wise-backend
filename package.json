@@ -9,6 +9,9 @@
 		"start": "node dist/server.js",
 		"typecheck": "tsc --noEmit"
 	},
+	"prisma": {
+		"seed": "tsx prisma/seed.ts"
+	},
 	"dependencies": {
 		"@prisma/client": "^6.17.1",
 		"cookie-parser": "~1.4.4",
